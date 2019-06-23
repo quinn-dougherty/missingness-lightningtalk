@@ -1,5 +1,5 @@
-from dask.distributed import Client, progress
-client = Client(n_workers=2, threads_per_worker=2, memory_limit='1GB')
+#from dask.distributed import Client, progress
+#client = Client(n_workers=2, threads_per_worker=2, memory_limit='1GB')
 
 import pandas as pd
 import numpy as np
@@ -14,7 +14,7 @@ from sklearn.experimental import enable_iterative_imputer
 from sklearn.impute import IterativeImputer
 from category_encoders import BinaryEncoder
 from tqdm import tqdm
-import dask.dataframe as dd
+#import dask.dataframe as dd
 import pickle
 from argparse import ArgumentParser
 
@@ -24,7 +24,7 @@ Array = np.ndarray
 Imputer = Callable[[DataFrame], DataFrame]
 nan = np.nan
 
-df = dd.read_csv('data.csv').drop(['name'], axis=1)
+df = pd.read_csv('data.csv').drop(['name'], axis=1)
 X_ = df.drop('status_group', axis=1)
 y = df.status_group
 
@@ -33,7 +33,7 @@ FEATS = 20
 
 pca = PCA(n_components = FEATS)
 
-vals= pca.fit_transform(StandardScaler().fit_transform(be.fit_transform(X_.compute())))
+vals= pca.fit_transform(StandardScaler().fit_transform(be.fit_transform(X_)))
 
 X = pd.DataFrame(vals, columns=[f"pc{k+1}" for k in range(FEATS)], index=y.index).assign(y=y)
 
@@ -102,21 +102,20 @@ def result(xprmnt: Iterable[Tuple[Tuple[str, Array],
             .rename(columns={**{0: 'imputer'}}))#, **{k: f"coef_norm_{k}" for k in range(1, FEATS+1)}}))
 
 parser = ArgumentParser(description="run experiment")
-parser.add_argument('--trials', metavar='N', type=int, default=4
+parser.add_argument('--trials', metavar='N', type=int, default=4,
                     help='how many times per imputer?')
 
 args = parser.parse_args()
 
 if __name__=='__main__': 
-    
     TRIALS = args.trials
-    result_df_40percent = result(experiment(imputers, X, y, 0.4, TRIALS))
-    result_df_20percent = result(experiment(imputers, X, y, 0.2, TRIALS))
+    result_df_10percent = result(experiment(imputers, X, y, 0.1, TRIALS))
+    result_df_30percent = result(experiment(imputers, X, y, 0.3, TRIALS))
 
-    with open("results_tuple.pickle", "rb") as serialize_results: 
-        serialize_results.dump((result_df_40percent, result_df_20percent))
+    with open("results_tuple.pickle", "wb") as serialize_results: 
+        serialize_results.dump((result_df_10percent, result_df_30percent))
 
-    result_df = DataFrame().assign(twenty = result_df_20percent.drop('imputer', axis=1).T.mean(), 
-                                   fourty = result_df_40percent.drop('imputer', axis=1).T.mean())
+    #result_df = DataFrame().assign(twenty = result_df_10percent.drop('imputer', axis=1).T.mean(), 
+    #                               fourty = result_df_30percent.drop('imputer', axis=1).T.mean())
 
-    
+    #result_df.savefig('result_boxplot.png')
