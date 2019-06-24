@@ -29,7 +29,7 @@ X_ = df.drop('status_group', axis=1)
 y = df.status_group
 
 be = BinaryEncoder()
-FEATS = 20
+FEATS = 70
 
 pca = PCA(n_components = FEATS)
 
@@ -109,11 +109,11 @@ args = parser.parse_args()
 
 if __name__=='__main__': 
     TRIALS = args.trials
-    result_df_10percent = result(experiment(imputers, X, y, 0.1, TRIALS))
-    result_df_30percent = result(experiment(imputers, X, y, 0.3, TRIALS))
+    result_df_10percent = result(experiment(imputers, X, y, 0.1, TRIALS)).drop('imputer', axis=1).values.reshape(-1, 1)
+    result_df_30percent = result(experiment(imputers, X, y, 0.3, TRIALS)).drop('imputer', axis=1).values.reshape(-1, 1)
 
     with open("results_tuple.pickle", "wb") as serialize_results: 
-        serialize_results.dump((result_df_10percent, result_df_30percent))
+        pickle.dump((result_df_10percent, result_df_30percent), serialize_results)
 
     #result_df = DataFrame().assign(twenty = result_df_10percent.drop('imputer', axis=1).T.mean(), 
     #                               fourty = result_df_30percent.drop('imputer', axis=1).T.mean())
